@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minimal Gold Calendar</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --panel: #111112;
+      --panel-soft: #151516;
+      --gold: #c9a24b;
+      --gold-light: #e4c875;
+      --text: #eee8dc;
+      --muted: #8f8a80;
+      --line: rgba(255,255,255,.07);
+      --line-gold: rgba(201,162,75,.22);
+      --danger: #b86d5d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(201,162,75,.06), transparent 26%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Pretendard", sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 48px auto;
+    }
+
+    .calendar {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.32);
+    }
+
+    .topbar {
+      min-height: 92px;
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .date-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .month {
+      margin: 0;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(30px, 4vw, 42px);
+      font-weight: 500;
+      color: var(--gold-light);
+      letter-spacing: -.03em;
+    }
+
+    .year {
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .16em;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: transparent;
+      color: #cfc8ba;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--line-gold);
+      color: var(--gold-light);
+      background: rgba(201,162,75,.04);
+    }
+
+    .btn.primary {
+      border-color: transparent;
+      background: var(--gold);
+      color: #17130b;
+      font-weight: 700;
+    }
+
+    .btn.primary:hover {
+      background: var(--gold-light);
+      color: #17130b;
+    }
+
+    .weekdays,
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .weekdays {
+      background: #0f0f10;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .weekday {
+      padding: 12px 8px;
+      text-align: center;
+      color: #706c64;
+      font-size: 11px;
+      letter-spacing: .14em;
+    }
+
+    .grid {
+      background: var(--line);
+      gap: 1px;
+    }
+
+    .day {
+      min-height: 116px;
+      padding: 11px;
+      background: var(--panel);
+      cursor: pointer;
+      transition: background .18s ease;
+      overflow: hidden;
+    }
+
+    .day:hover {
+      background: var(--panel-soft);
+    }
+
+    .day.other {
+      opacity: .28;
+    }
+
+    .day.today {
+      background:
+        linear-gradient(180deg, rgba(201,162,75,.055), transparent 60%),
+        var(--panel);
+    }
+
+    .number {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #c7c0b3;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 15px;
+    }
+
+    .today .number {
+      background: var(--gold);
+      color: #15110a;
+      font-weight: 700;
+    }
+
+    .events {
+      margin-top: 9px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .event {
+      padding: 5px 7px;
+      border-radius: 5px;
+      background: rgba(201,162,75,.075);
+      border-left: 2px solid var(--gold);
+      color: #d8d1c4;
+      font-size: 11px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event.personal {
+      border-left-color: #9f8660;
+    }
+
+    .event.important {
+      border-left-color: var(--danger);
+    }
+
+    .footer {
+      padding: 13px 18px;
+      border-top: 1px solid var(--line);
+      color: #666159;
+      font-size: 11px;
+      text-align: right;
+    }
+
+    .modal-wrap {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(0,0,0,.68);
+      backdrop-filter: blur(6px);
+      z-index: 10;
+    }
+
+    .modal-wrap.open {
+      display: grid;
+    }
+
+    .modal {
+      width: min(420px, 100%);
+      padding: 22px;
+      border: 1px solid var(--line-gold);
+      border-radius: 14px;
+      background: #121213;
+      box-shadow: 0 28px 80px rgba(0,0,0,.55);
+    }
+
+    .modal h2 {
+      margin: 0 0 5px;
+      color: var(--gold-light);
+      font-family: "Cormorant Garamond", serif;
+      font-size: 25px;
+      font-weight: 500;
+    }
+
+    .selected-date {
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    label {
+      display: block;
+      margin: 13px 0 7px;
+      color: #a9a295;
+      font-size: 12px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #0d0d0e;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--gold);
+    }
+
+    .modal-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        width: min(100% - 16px, 1120px);
+        margin: 8px auto;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .day {
+        min-height: 90px;
+        padding: 7px;
+      }
+
+      .event {
+        font-size: 9px;
+        padding: 4px 5px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .weekday {
+        font-size: 9px;
+        letter-spacing: .05em;
+      }
+
+      .day {
+        min-height: 72px;
+      }
+
+      .number {
+        width: 23px;
+        height: 23px;
+        font-size: 12px;
+      }
+
+      .footer {
+        display: none;
+      }
+    }
+  
+    html { font-size: clamp(10px, 0.72vw + 5px, 16px); }
+
+    .wrap {
+      width: min(1120px, calc(100vw - clamp(12px, 3vw, 32px)));
+      margin: clamp(8px, 4vw, 48px) auto;
+    }
+
+    .calendar {
+      width: 100%;
+      border-radius: clamp(10px, 1.4vw, 16px);
+    }
+
+    .topbar {
+      min-height: clamp(58px, 8vw, 92px);
+      padding: clamp(10px, 2vw, 22px) clamp(10px, 2.2vw, 24px);
+      gap: clamp(8px, 1.8vw, 20px);
+    }
+
+    .date-heading { gap: clamp(6px, 1vw, 12px); }
+    .month { font-size: clamp(1.55rem, 3.8vw, 2.65rem); }
+    .year { font-size: clamp(.65rem, 1.1vw, .82rem); }
+    .actions { gap: clamp(4px, .7vw, 8px); }
+
+    .btn {
+      height: clamp(29px, 3.5vw, 38px);
+      padding: 0 clamp(8px, 1.2vw, 13px);
+      border-radius: clamp(6px, .8vw, 9px);
+      font-size: clamp(.68rem, 1.05vw, .9rem);
+    }
+
+    .weekday {
+      padding: clamp(7px, 1.1vw, 12px) 4px;
+      font-size: clamp(.52rem, .85vw, .7rem);
+      letter-spacing: clamp(.04em, .12vw, .14em);
+    }
+
+    .day {
+      min-width: 0;
+      min-height: 0;
+      aspect-ratio: 1 / .76;
+      padding: clamp(4px, 1vw, 11px);
+    }
+
+    .number {
+      width: clamp(20px, 2.5vw, 28px);
+      height: clamp(20px, 2.5vw, 28px);
+      font-size: clamp(.72rem, 1.25vw, .96rem);
+    }
+
+    .events {
+      margin-top: clamp(3px, .75vw, 9px);
+      gap: clamp(2px, .42vw, 5px);
+    }
+
+    .event {
+      padding: clamp(2px, .45vw, 5px) clamp(3px, .65vw, 7px);
+      border-radius: clamp(3px, .45vw, 5px);
+      font-size: clamp(.48rem, .78vw, .7rem);
+      border-left-width: clamp(1px, .18vw, 2px);
+    }
+
+    .footer {
+      padding: clamp(7px, 1.1vw, 13px) clamp(10px, 1.6vw, 18px);
+      font-size: clamp(.52rem, .78vw, .7rem);
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions { width: 100%; }
+      .actions .btn { flex: 1; }
+      .actions .btn.primary { flex: 1.6; }
+      .day { aspect-ratio: 1 / .92; }
+    }
+
+    @media (max-width: 430px) {
+      .wrap {
+        width: calc(100vw - 8px);
+        margin: 4px auto;
+      }
+
+      .calendar { border-radius: 8px; }
+      .topbar { padding: 10px 8px; }
+
+      .day {
+        aspect-ratio: 1 / 1.05;
+        padding: 3px;
+      }
+
+      .event { padding: 2px 3px; }
+      .footer { display: none; }
+    }
+
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="calendar">
+      <header class="topbar">
+        <div class="date-heading">
+          <h1 class="month" id="monthTitle"></h1>
+          <span class="year" id="yearLabel"></span>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="prevBtn">←</button>
+          <button class="btn" id="todayBtn">오늘</button>
+          <button class="btn" id="nextBtn">→</button>
+          <button class="btn primary" id="addBtn">일정 추가</button>
+        </div>
+      </header>
+
+      <div class="weekdays">
+        <div class="weekday">SUN</div>
+        <div class="weekday">MON</div>
+        <div class="weekday">TUE</div>
+        <div class="weekday">WED</div>
+        <div class="weekday">THU</div>
+        <div class="weekday">FRI</div>
+        <div class="weekday">SAT</div>
+      </div>
+
+      <div class="grid" id="calendarGrid"></div>
+      <div class="footer">일정 삭제: 항목 더블클릭</div>
+    </section>
+  </main>
+
+  <div class="modal-wrap" id="modalWrap">
+    <div class="modal">
+      <h2>일정 추가</h2>
+      <div class="selected-date" id="selectedDateText"></div>
+
+      <label for="eventTitle">일정</label>
+      <input id="eventTitle" type="text" placeholder="일정 내용을 입력하세요" maxlength="40" />
+
+      <label for="eventType">분류</label>
+      <select id="eventType">
+        <option value="study">학업 / 업무</option>
+        <option value="personal">개인</option>
+        <option value="important">중요</option>
+      </select>
+
+      <div class="modal-actions">
+        <button class="btn" id="cancelBtn">취소</button>
+        <button class="btn primary" id="saveBtn">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const now = new Date();
+    let viewYear = now.getFullYear();
+    let viewMonth = now.getMonth();
+    let selectedDateKey = "";
+
+    const monthTitle = document.getElementById("monthTitle");
+    const yearLabel = document.getElementById("yearLabel");
+    const calendarGrid = document.getElementById("calendarGrid");
+    const modalWrap = document.getElementById("modalWrap");
+    const selectedDateText = document.getElementById("selectedDateText");
+    const eventTitle = document.getElementById("eventTitle");
+    const eventType = document.getElementById("eventType");
+
+    function getEvents() {
+      return JSON.parse(localStorage.getItem("minimalGoldCalendarEvents") || "{}");
+    }
+
+    function setEvents(events) {
+      localStorage.setItem("minimalGoldCalendarEvents", JSON.stringify(events));
+    }
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function makeDateKey(year, month, date) {
+      return `${year}-${pad(month + 1)}-${pad(date)}`;
+    }
+
+    function openModal(dateKey) {
+      selectedDateKey = dateKey;
+      const [year, month, date] = dateKey.split("-");
+      selectedDateText.textContent = `${year}.${month}.${date}`;
+      eventTitle.value = "";
+      eventType.value = "study";
+      modalWrap.classList.add("open");
+      setTimeout(() => eventTitle.focus(), 80);
+    }
+
+    function closeModal() {
+      modalWrap.classList.remove("open");
+    }
+
+    function renderCalendar() {
+      monthTitle.textContent = monthNames[viewMonth];
+      yearLabel.textContent = viewYear;
+      calendarGrid.innerHTML = "";
+
+      const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+      const events = getEvents();
+
+      for (let i = 0; i < 42; i++) {
+        let year = viewYear;
+        let month = viewMonth;
+        let date;
+        let other = false;
+
+        if (i < firstDay) {
+          date = daysInPrevMonth - firstDay + i + 1;
+          month--;
+          if (month < 0) {
+            month = 11;
+            year--;
+          }
+          other = true;
+        } else if (i >= firstDay + daysInMonth) {
+          date = i - firstDay - daysInMonth + 1;
+          month++;
+          if (month > 11) {
+            month = 0;
+            year++;
+          }
+          other = true;
+        } else {
+          date = i - firstDay + 1;
+        }
+
+        const dateKey = makeDateKey(year, month, date);
+        const day = document.createElement("div");
+        day.className = "day";
+
+        if (other) day.classList.add("other");
+
+        if (
+          year === now.getFullYear() &&
+          month === now.getMonth() &&
+          date === now.getDate()
+        ) {
+          day.classList.add("today");
+        }
+
+        day.innerHTML = `
+          <div class="number">${date}</div>
+          <div class="events"></div>
+        `;
+
+        const eventWrap = day.querySelector(".events");
+
+        (events[dateKey] || []).slice(0, 3).forEach(item => {
+          const event = document.createElement("div");
+          event.className = `event ${item.type}`;
+          event.textContent = item.title;
+
+          event.addEventListener("dblclick", e => {
+            e.stopPropagation();
+            const allEvents = getEvents();
+            allEvents[dateKey] = allEvents[dateKey].filter(v => v.id !== item.id);
+
+            if (!allEvents[dateKey].length) {
+              delete allEvents[dateKey];
+            }
+
+            setEvents(allEvents);
+            renderCalendar();
+          });
+
+          eventWrap.appendChild(event);
+        });
+
+        day.addEventListener("click", () => openModal(dateKey));
+        calendarGrid.appendChild(day);
+      }
+    }
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      viewMonth--;
+
+      if (viewMonth < 0) {
+        viewMonth = 11;
+        viewYear--;
+      }
+
+      renderCalendar();
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      viewMonth++;
+
+      if (viewMonth > 11) {
+        viewMonth = 0;
+        viewYear++;
+      }
+
+      renderCalendar();
+    });
+
+    document.getElementById("todayBtn").addEventListener("click", () => {
+      viewYear = now.getFullYear();
+      viewMonth = now.getMonth();
+      renderCalendar();
+    });
+
+    document.getElementById("addBtn").addEventListener("click", () => {
+      openModal(makeDateKey(viewYear, viewMonth, 1));
+    });
+
+    document.getElementById("cancelBtn").addEventListener("click", closeModal);
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      const title = eventTitle.value.trim();
+
+      if (!title) {
+        eventTitle.focus();
+        return;
+      }
+
+      const events = getEvents();
+
+      if (!events[selectedDateKey]) {
+        events[selectedDateKey] = [];
+      }
+
+      events[selectedDateKey].push({
+        id: Date.now(),
+        title,
+        type: eventType.value
+      });
+
+      setEvents(events);
+      closeModal();
+      renderCalendar();
+    });
+
+    eventTitle.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        document.getElementById("saveBtn").click();
+      }
+    });
+
+    modalWrap.addEventListener("click", event => {
+      if (event.target === modalWrap) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    });
+
+    renderCalendar();
+  </script>
+</body>
+</html>
